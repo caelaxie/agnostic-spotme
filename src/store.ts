@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, realpathSync } from 'node:fs';
 import { link, mkdir, open, readFile, rename, stat, unlink } from 'node:fs/promises';
 import { homedir, hostname } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { INITIAL, isDifficulty, toEvery } from './engine.ts';
 import type { CodeWrite, DisplayPath, Exercise, Mode, ProjectRoot, Settings, State } from './engine.ts';
 
@@ -13,6 +13,11 @@ export function canonicalRoot(dir: string): ProjectRoot {
     if (existsSync(join(d, '.git'))) return d as ProjectRoot;
     if (dirname(d) === d) return real as ProjectRoot;
   }
+}
+
+/** --root, then SPOTME_ROOT, then a project dir the harness exports, then cwd. */
+export function rootDirFrom(flag: string | undefined, env: NodeJS.ProcessEnv, cwd: string): string {
+  return resolve(cwd, flag || env.SPOTME_ROOT || env.FACTORY_PROJECT_DIR || env.CLAUDE_PROJECT_DIR || env.GEMINI_PROJECT_DIR || cwd);
 }
 
 export function stateDir(env: NodeJS.ProcessEnv): string {
