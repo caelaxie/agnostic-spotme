@@ -6,7 +6,6 @@ import { dirname, join, resolve } from 'node:path';
 import { INITIAL, isDifficulty, toEvery } from './engine.ts';
 import type { CodeWrite, DisplayPath, Exercise, Mode, ProjectRoot, Settings, State } from './engine.ts';
 
-/** realpath, then the nearest ancestor holding `.git` (a file in worktrees), else the directory itself. */
 export function canonicalRoot(dir: string): ProjectRoot {
   const real = realpathSync(dir);
   for (let d = real; ; d = dirname(d)) {
@@ -15,7 +14,6 @@ export function canonicalRoot(dir: string): ProjectRoot {
   }
 }
 
-/** --root, then SPOTME_ROOT, then a project dir the harness exports, then cwd. */
 export function rootDirFrom(flag: string | undefined, env: NodeJS.ProcessEnv, cwd: string): string {
   return resolve(cwd, flag || env.SPOTME_ROOT || env.FACTORY_PROJECT_DIR || env.CLAUDE_PROJECT_DIR || env.GEMINI_PROJECT_DIR || cwd);
 }
@@ -35,9 +33,7 @@ export class LockTimeout extends Error {}
 
 export interface Store {
   readonly file: string;
-  /** Lock-free snapshot; a missing or unreadable document reads as INITIAL. */
   read(): Promise<State>;
-  /** Serialized read-modify-write. Writes only when `f` returns a different State object. */
   transact<T>(f: (s: State) => readonly [State, T]): Promise<T>;
 }
 
@@ -230,7 +226,6 @@ function parseMode(x: Json, settings: Settings): Mode | null {
   }
 }
 
-/** Boundary parse of the stored document `{ v, root, state }`. */
 export function parseDoc(doc: Json): State | null {
   if (!isObj(doc) || doc.v !== 1 || !isObj(doc.state)) return null;
   const s = doc.state;

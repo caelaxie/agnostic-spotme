@@ -17,14 +17,12 @@ export type Action = 'create' | 'update' | 'remove' | 'unchanged' | 'absent';
 export interface FileChange {
   readonly path: string;
   readonly action: Action;
-  /** Final content; null removes the file. */
   readonly content: string | null;
 }
 
 export interface Plan {
   readonly changes: readonly FileChange[];
   readonly notes: readonly string[];
-  /** Any error means nothing may be written. */
   readonly errors: readonly string[];
 }
 
@@ -53,10 +51,6 @@ function tomlNext(current: string | null, body: string, op: Op, path: string, er
   return rest.trim() ? `${rest.trimEnd()}\n\n${block}` : block;
 }
 
-/**
- * Pure apart from reading the files it will touch. Assets apply in order against an in-memory view,
- * so two assets may edit one file (Gemini settings.json, OpenCode opencode.json).
- */
 export async function plan(assets: readonly Asset[], op: Op): Promise<Plan> {
   const original = new Map<string, string | null>();
   const view = new Map<string, string | null>();
@@ -118,7 +112,6 @@ async function writeAtomic(path: string, content: string): Promise<void> {
   await rename(tmp, path);
 }
 
-/** Removes now-empty directories that only spotme created, e.g. commands/spotme or .claude/spotme-plugin. */
 async function pruneOwnedDirs(path: string): Promise<void> {
   for (let dir = dirname(path); /spotme/i.test(basename(dir)) || /spotme/i.test(dirname(dir)); dir = dirname(dir)) {
     try {
@@ -147,7 +140,6 @@ export function dataDir(env: NodeJS.ProcessEnv): string {
   return env.XDG_DATA_HOME ? join(env.XDG_DATA_HOME, 'spotme') : join(env.HOME || homedir(), '.local', 'share', 'spotme');
 }
 
-/** The built files to copy into the stable runtime dir, found next to this bundle or in ../dist from src. */
 export function runtimeSources(): { cli: string | null; opencode: string | null } {
   const here = dirname(fileURLToPath(import.meta.url));
   const dir = basename(here) === 'src' ? join(here, '..', 'dist') : here;
@@ -204,7 +196,6 @@ export function onPath(binary: string, env: NodeJS.ProcessEnv): boolean {
 
 export type Presence = 'installed' | 'outdated' | 'absent' | 'external';
 
-/** installed: a rerun would change nothing. absent: uninstall would change nothing. */
 export async function presence(ctx: InstallCtx): Promise<Presence> {
   const assets = HARNESSES[ctx.harness as HarnessId].assets(ctx);
   if (assets.every((a) => a.kind === 'note')) return 'external';

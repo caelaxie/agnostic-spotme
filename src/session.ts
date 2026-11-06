@@ -1,5 +1,6 @@
+import { realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import {
   command,
   COMMAND_NAMES,
@@ -31,10 +32,8 @@ export interface ToolReply {
 export interface SpotMe {
   readonly root: ProjectRoot;
   readonly store: Store;
-  /** Fails open: any error allows the write and logs to stderr. */
   onWrite(raws: readonly RawWrite[]): Promise<WriteVerdict>;
   command(name: CommandName, args: string): Promise<CommandReply>;
-  /** What `command` would answer, from a lock-free snapshot, without changing state. */
   peekCommand(name: CommandName, args: string): Promise<CommandOutcome['kind']>;
   callTool(name: string, args: unknown): Promise<ToolReply>;
 }
@@ -52,6 +51,7 @@ export type ParamSpec =
 export interface ToolSpec {
   readonly description: string;
   readonly params: Readonly<Record<string, ParamSpec>>;
+  readonly readOnly: boolean;
 }
 
 export const TOOLS = {
@@ -62,11 +62,13 @@ export const TOOLS = {
       filePath: { type: 'string', description: 'Path to the scaffold file (already written to disk)' },
       difficulty: { type: 'enum', values: DIFFICULTIES, description: 'Difficulty, must match the active session setting' },
     },
+    readOnly: false,
   },
-  spotme_status: { description: 'Show the current SpotMe session status.', params: {} },
+  spotme_status: { description: 'Show the current SpotMe session status.', params: {}, readOnly: true },
   spotme_end: {
     description: 'Close the current SpotMe exercise. Call this as the LAST thing after done, solve, or skip.',
     params: {},
+    readOnly: false,
   },
   spotme_command: {
     description:
@@ -75,6 +77,7 @@ export const TOOLS = {
       name: { type: 'enum', values: COMMAND_NAMES, description: 'Command name without the /spotme: prefix' },
       args: { type: 'string', description: 'Text the user typed after the command', optional: true },
     },
+    readOnly: false,
   },
 } as const satisfies Record<string, ToolSpec>;
 
@@ -107,6 +110,19 @@ function parseArgs(spec: ToolSpec, args: unknown): Record<string, string> | stri
   return out;
 }
 
+/** Harnesses report paths through symlinks (/var vs /private/var on macOS); the root is a realpath. */
+function realPathOf(path: string): string {
+  const tail: string[] = [];
+  for (let dir = path; ; dir = dirname(dir)) {
+    try {
+      return join(realpathSync(dir), ...tail.reverse());
+    } catch {
+      if (dirname(dir) === dir) return path;
+      tail.push(basename(dir));
+    }
+  }
+}
+
 async function checkScaffold(abs: string): Promise<ScaffoldCheck> {
   try {
     return (await readFile(abs, 'utf8')).includes('SPOTME:') ? 'ok' : 'missingMarker';
@@ -129,7 +145,7 @@ export function openSpotMe(root: ProjectRoot, vocab: Vocab, opts: SpotMeOptions 
     root,
     store,
     async onWrite(raws) {
-      const write = toCodeWrite(root, raws);
+      const write = toCodeWrite(root, raws.map((w) => ({ kind: w.kind, path: realPathOf(resolve(root, w.path)) })));
       if (!write) return { allow: true };
       try {
         if ((await store.read()).mode.kind !== 'idle') return { allow: true };
@@ -150,11 +166,11 @@ export function openSpotMe(root: ProjectRoot, vocab: Vocab, opts: SpotMeOptions 
       if (typeof parsed === 'string') return { ok: false, text: parsed };
       switch (name as ToolName) {
         case 'spotme_exercise': {
-          const raw = parsed.filePath!;
+          const raw = realPathOf(resolve(root, parsed.filePath!));
           const difficulty = parsed.difficulty!;
           if (!isDifficulty(difficulty)) return { ok: false, text: `Unknown difficulty: ${difficulty}` };
           const exercise = { unit: parsed.unit!, path: displayPath(root, raw), difficulty };
-          const check = await checkScaffold(resolve(root, raw));
+          const check = await checkScaffold(raw);
           const out = await store.transact((s) => step(s, { type: 'register', exercise, check }));
           return out.type === 'ready'
             ? { ok: true, text: renderReady(out.exercise, vocab) }

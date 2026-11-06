@@ -23,7 +23,6 @@ export interface Sandbox {
   readonly env: NodeJS.ProcessEnv;
 }
 
-/** A git-looking project, its own state dir and HOME, so nothing touches the real user config. */
 export function sandbox(): Sandbox {
   const base = tempDir();
   const project = join(base, 'project');

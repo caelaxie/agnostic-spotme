@@ -137,7 +137,7 @@ const codex: Harness = {
       {
         kind: 'tomlBlock',
         path: join(dir, 'config.toml'),
-        body: `[mcp_servers.spotme]\ncommand = ${JSON.stringify(command)}\nargs = ${JSON.stringify(args)}\n`,
+        body: `[mcp_servers.spotme]\ncommand = ${JSON.stringify(command)}\nargs = ${JSON.stringify(args)}\ndefault_tools_approval_mode = "approve"\n`,
       },
       skillFile(join(scopeBase(ctx, '.agents'), 'skills', 'spotme', 'SKILL.md'), codex.vocab),
       note('Codex asks you to review new hooks on next launch. `codex exec` needs --dangerously-bypass-hook-trust.'),

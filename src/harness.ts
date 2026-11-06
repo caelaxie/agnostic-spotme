@@ -4,7 +4,6 @@ import { skillMarkdown, SKILL_DESCRIPTION } from './messages.ts';
 import type { Vocab } from './messages.ts';
 
 export type Extractor = (toolInput: unknown) => readonly RawWrite[];
-/** Tool name as the harness reports it, mapped to the paths that call writes. */
 export type WriteTable = Readonly<Record<string, Extractor>>;
 
 export type HookEvent = 'write' | 'prompt';
@@ -22,13 +21,11 @@ export interface HookReply {
 }
 
 export interface HookProtocol {
-  /** Native event names. `prompt: null` means the harness has no usable prompt hook. */
   readonly events: { readonly write: string; readonly prompt: string | null };
   parse(event: HookEvent, stdin: unknown, env: NodeJS.ProcessEnv): HookPayload | null;
   deny(reason: string): HookReply;
   /** No opinion. Must not auto-approve where the harness has its own permission prompt. */
   pass(event: HookEvent): HookReply;
-  /** End the prompt without a model turn; `text` must reach the user. */
   stop(text: string): HookReply;
 }
 
@@ -40,9 +37,7 @@ export interface InstallCtx {
   readonly project: ProjectRoot;
   readonly home: string;
   readonly dataDir: string;
-  /** argv that launches spotme, e.g. [node, ~/.local/share/spotme/runtime/cli.mjs]. */
   readonly bin: readonly string[];
-  /** Arguments appended to every hook and MCP invocation: --root for project scope, --state-dir when given. */
   readonly baked: readonly string[];
   readonly stateDir: string | null;
   readonly version: string;
@@ -51,10 +46,6 @@ export interface InstallCtx {
 export type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 export type JsonObject = { [k: string]: Json };
 
-/**
- * `file` is wholly owned. `json` and `tomlBlock` edit a file the user also owns: they remove every
- * spotme-owned entry and, on install, add the current ones, so a rerun converges.
- */
 export type Asset =
   | { readonly kind: 'file'; readonly path: string; readonly content: string }
   | { readonly kind: 'json'; readonly path: string; readonly edit: (doc: JsonObject, op: 'install' | 'uninstall') => JsonObject }
@@ -64,10 +55,8 @@ export type Asset =
 export interface Harness {
   readonly vocab: Vocab;
   readonly writes: WriteTable;
-  /** null for in-process harnesses (OpenCode, Pi). */
   readonly hooks: HookProtocol | null;
   readonly scopes: readonly Scope[];
-  /** Executable looked up on PATH by `install all`. */
   readonly binary: string;
   assets(ctx: InstallCtx): readonly Asset[];
 }
@@ -89,7 +78,6 @@ export function patchField(key: string): Extractor {
   };
 }
 
-/** Codex-style patch headers. Delete counts as nothing; Move retargets the preceding Update. */
 export function parsePatch(text: string): readonly RawWrite[] {
   const out: RawWrite[] = [];
   for (const line of text.split(/\r?\n/)) {
@@ -113,7 +101,6 @@ export function writeMatcher(table: WriteTable): string {
   return `^(${Object.keys(table).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`;
 }
 
-/** Recognizes `/spotme:on hard`, `/spotme-on`, `spotme:on`, and the sentinel heading generated command files. */
 export function parsePromptCommand(
   prompt: string,
   isName: (s: string) => s is CommandName,
@@ -173,7 +160,6 @@ export function mcpArgv(ctx: InstallCtx): readonly string[] {
   return [...ctx.bin, 'mcp', '--harness', ctx.harness, ...ctx.baked];
 }
 
-/** Matches any hook command install ever wrote, whatever launcher prefix it used. */
 export function isOwnedCommand(command: unknown): boolean {
   return typeof command === 'string' && /spotme/i.test(command) && /\shook\s+[a-z]+\s+(?:write|prompt)(?:\s|$)/.test(command);
 }
@@ -257,7 +243,6 @@ export function hooksJson(
   };
 }
 
-/** `{ <key>: { spotme: entry } }`, dropping the container when it empties. */
 export function namedEntryJson(path: string, key: string, name: string, entry: Json): Asset {
   return {
     kind: 'json',

@@ -8,7 +8,6 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
 
 export type Every = Brand<number, 'Every'>;
 export type ProjectRoot = Brand<string, 'ProjectRoot'>;
-/** Root-relative POSIX path when inside the root, absolute otherwise. */
 export type DisplayPath = Brand<string, 'DisplayPath'>;
 
 export function toEvery(n: number): Every | null {
@@ -50,7 +49,6 @@ export interface Exercise {
   readonly difficulty: Difficulty;
 }
 
-/** Invariant kept by `step` and enforced by store.parseDoc: idle.count < settings.every. */
 export type Mode =
   | { readonly kind: 'off' }
   | { readonly kind: 'idle'; readonly count: number }
@@ -65,7 +63,6 @@ export interface State {
 
 export const INITIAL: State = { v: 1, settings: DEFAULT_SETTINGS, mode: { kind: 'off' } };
 
-/** Result of checking the scaffold file on disk; the session does the I/O. */
 export type ScaffoldCheck = 'ok' | 'missingFile' | 'missingMarker';
 
 export type Input =
@@ -103,7 +100,6 @@ function sameExercise(a: Exercise, b: Exercise): boolean {
   return a.unit === b.unit && a.path === b.path;
 }
 
-/** The whole state machine. Returns the identical State object when nothing changed. */
 export function step<I extends Input>(s: State, input: I): readonly [State, Outcome<I>] {
   return stepAny(s, input) as readonly [State, Outcome<I>];
 }
@@ -163,7 +159,6 @@ export function extensionOf(path: string): string {
   return dot <= 0 ? '' : base.slice(dot + 1).toLowerCase();
 }
 
-/** One tool call counts once, even when a patch touches several files. */
 export function toCodeWrite(root: ProjectRoot, raws: readonly RawWrite[]): CodeWrite | null {
   const hit = raws.find((w) => CODE_EXTENSIONS.has(extensionOf(w.path)));
   return hit ? { kind: hit.kind, path: displayPath(root, hit.path) } : null;
@@ -218,7 +213,6 @@ export type CommandOutcome =
         | { readonly why: 'busy'; readonly current: Exercise };
     };
 
-/** Pure. Only on, off and skip-while-awaiting change state. */
 export function command(s: State, name: CommandName, args: string): readonly [State, CommandOutcome] {
   const mode = s.mode;
   const refuse = (refusal: Extract<CommandOutcome, { kind: 'refuse' }>['refusal']) =>

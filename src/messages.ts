@@ -54,7 +54,6 @@ function commentSyntax(path: string): { open: string; close?: string } {
   return EXT_COMMENT[extensionOf(path)] ?? { open: '//' };
 }
 
-/** `// SPOTME: <description>` in the file's own comment syntax. */
 export function markerFor(path: string): string {
   const { open, close } = commentSyntax(path);
   return close ? `${open} SPOTME: <description> ${close}` : `${open} SPOTME: <description>`;
@@ -202,12 +201,10 @@ function renderRefusal(r: Refusal, v: Vocab): string {
   }
 }
 
-/** What a model receives when it must relay rather than act (spotme_command results, CLI --for-model). */
 export function relay(kind: CommandOutcome['kind'], text: string): string {
   return kind === 'prompt' ? text : `Show the following to the user verbatim and take no other action:\n\n${text}`;
 }
 
-/** First line is a sentinel so a prompt hook recognizes an already-expanded command file. */
 export function commandFileBody(name: CommandName, argsToken: string | null): string {
   const args = argsToken === null ? 'set to any text the user typed after the command' : `"${argsToken}"`;
   return [

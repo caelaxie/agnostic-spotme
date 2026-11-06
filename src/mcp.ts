@@ -28,7 +28,6 @@ const fail = (id: Id | null, code: number, message: string): Response => ({ json
 
 const field = (x: unknown, k: string): unknown => (typeof x === 'object' && x !== null ? (x as Record<string, unknown>)[k] : undefined);
 
-/** One JSON-RPC message in, at most one response out. Notifications and stray responses yield null. */
 export function createMcpHandler(opts: Omit<ServeOptions, 'input' | 'write'>): (message: unknown) => Promise<Response | null> {
   const vocab = opts.harness ? HARNESSES[opts.harness].vocab : GENERIC_VOCAB;
   let session: SpotMe | null = null;
@@ -56,7 +55,12 @@ export function createMcpHandler(opts: Omit<ServeOptions, 'input' | 'write'>): (
         return ok(id, {});
       case 'tools/list':
         return ok(id, {
-          tools: Object.entries(TOOLS).map(([name, spec]) => ({ name, description: spec.description, inputSchema: toJsonSchema(spec) })),
+          tools: Object.entries(TOOLS).map(([name, spec]) => ({
+            name,
+            description: spec.description,
+            inputSchema: toJsonSchema(spec),
+            annotations: { readOnlyHint: spec.readOnly, destructiveHint: false, openWorldHint: false },
+          })),
         });
       case 'tools/call': {
         const name = field(params, 'name');
@@ -74,7 +78,6 @@ export function createMcpHandler(opts: Omit<ServeOptions, 'input' | 'write'>): (
   };
 }
 
-/** Newline-delimited JSON-RPC over stdio, handled in arrival order. */
 export async function serveMcp(opts: ServeOptions): Promise<void> {
   const handle = createMcpHandler(opts);
   let buffer = '';

@@ -18,7 +18,6 @@ function tryParse(text: string): unknown {
   }
 }
 
-/** With SPOTME_CAPTURE_DIR set, every payload is appended as JSONL, which is how fixtures get recorded. */
 function capture(env: NodeJS.ProcessEnv, harness: HarnessId, event: HookEvent, stdin: unknown, reply: HookReply): void {
   if (!env.SPOTME_CAPTURE_DIR) return;
   try {
@@ -26,11 +25,9 @@ function capture(env: NodeJS.ProcessEnv, harness: HarnessId, event: HookEvent, s
     const line = JSON.stringify({ at: new Date().toISOString(), harness, event, stdin, stdout: reply.stdout });
     appendFileSync(join(env.SPOTME_CAPTURE_DIR, 'hooks.jsonl'), `${line}\n`);
   } catch {
-    // capture is diagnostics only
   }
 }
 
-/** One process per hook firing. Never throws: any failure answers "no opinion". */
 export async function runHook(
   id: HarnessId,
   event: HookEvent,
@@ -53,8 +50,6 @@ export async function runHook(
         if (!verdict.allow) reply = proto.deny(verdict.reason);
       } else {
         const cmd = parsePromptCommand(payload.prompt ?? '', isCommandName);
-        // Prompt-kind commands pass through untouched: the model runs them via spotme_command,
-        // and running them here as well would apply skip twice.
         if (cmd && (await sm.peekCommand(cmd.name, cmd.args)) !== 'prompt') {
           reply = proto.stop((await sm.command(cmd.name, cmd.args)).text);
         }

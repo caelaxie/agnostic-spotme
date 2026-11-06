@@ -17,7 +17,6 @@ function toTypebox(p: ParamSpec): TSchema {
 
 const label = (name: string) => name.replace(/^spotme_/, 'SpotMe ').replace(/^./, (c) => c.toUpperCase());
 
-/** Pi loads this in-process. Commands run here: notices go to the UI, prompts go to the model. */
 export default function spotme(pi: ExtensionAPI): void {
   const h = HARNESSES.pi;
   const sessions = new Map<string, SpotMe>();
