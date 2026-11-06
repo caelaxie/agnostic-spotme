@@ -4,12 +4,12 @@ import { hostname } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { INITIAL, step, toEvery } from '../src/engine.ts';
-import type { State } from '../src/engine.ts';
+import type { DisplayPath, State } from '../src/engine.ts';
 import { canonicalRoot, LockTimeout, openStore, parseDoc, stateDir, stateKey } from '../src/store.ts';
 import { sandbox, tempDir } from './helpers.ts';
 
 const on = (every: number): State => ({ ...INITIAL, settings: { difficulty: 'medium', every: toEvery(every)! }, mode: { kind: 'idle', count: 0 } });
-const write = (path: string) => ({ type: 'write', write: { kind: 'create', path } }) as const;
+const write = (path: string) => ({ type: 'write', write: { kind: 'create', path: path as DisplayPath } }) as const;
 
 test('canonicalRoot resolves symlinks and climbs to the nearest .git', () => {
   const { root } = sandbox();
@@ -53,7 +53,7 @@ test('twenty concurrent writers through separate store handles lose no update', 
   const { root, stateDir: dir } = sandbox();
   await openStore(root, { dir }).transact(() => [on(25), null]);
   await Promise.all(
-    Array.from({ length: 20 }, (_, i) => openStore(root, { dir }).transact((s) => step(s, write(`f${i}.ts` as never)))),
+    Array.from({ length: 20 }, (_, i) => openStore(root, { dir }).transact((s) => step(s, write(`f${i}.ts`)))),
   );
   assert.deepEqual((await openStore(root, { dir }).read()).mode, { kind: 'idle', count: 20 });
   assert.deepEqual(
