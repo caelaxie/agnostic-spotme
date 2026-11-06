@@ -25,6 +25,10 @@ const RUNS: Record<string, (project: string) => Run> = {
     install: true,
   }),
   cursor: (p) => ({ argv: ['cursor-agent', '-p', '--force', '--trust', '--approve-mcps', '--workspace', p, PROMPT], install: true }),
+  antigravity: () => ({
+    argv: ['agy', '-p', PROMPT, '--dangerously-skip-permissions', '--print-timeout', '300s'],
+    install: true,
+  }),
   pi: () => ({
     argv: ['pi', '-p', '--no-session', '--approve', '--provider', 'openai-codex', '--model', 'gpt-5.6-terra', '-e', join(REPO, 'src', 'pi.ts'), PROMPT],
     install: false,
@@ -78,7 +82,10 @@ async function smoke(harness: string): Promise<Record<string, unknown>> {
   const started = Date.now();
   const code = await run(spec.argv, project, env, join(base, 'agent.log'), 8 * 60_000);
   const hooks = existsSync(join(capture, 'hooks.jsonl'))
-    ? readFileSync(join(capture, 'hooks.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l) as { event: string; stdout: string; stdin: { tool_name?: string } })
+    ? readFileSync(join(capture, 'hooks.jsonl'), 'utf8')
+        .trim()
+        .split('\n')
+        .map((l) => JSON.parse(l) as { event: string; stdout: string; stdin: { tool_name?: string; toolCall?: { name?: string } } })
     : [];
   const denials = hooks.filter((h) => h.stdout.includes('Counter reached')).length;
   const mode = (await openStore(canonicalRoot(project), { dir: state }).read()).mode;
@@ -90,7 +97,7 @@ async function smoke(harness: string): Promise<Record<string, unknown>> {
     exitCode: code,
     seconds: Math.round((Date.now() - started) / 1000),
     hookFirings: hooks.length,
-    hookTools: [...new Set(hooks.map((h) => h.stdin?.tool_name ?? h.event))],
+    hookTools: [...new Set(hooks.map((h) => h.stdin?.tool_name ?? h.stdin?.toolCall?.name ?? h.event))],
     denials,
     markers,
     mode,

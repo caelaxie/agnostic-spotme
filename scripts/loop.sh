@@ -1,9 +1,14 @@
 #!/bin/sh
 # Full live loop against a real harness: on, status, a code write, the human
 # implements, done, off. Each step checks the persisted mode.
-# usage: scripts/loop.sh droid|codex
+# usage: scripts/loop.sh droid|codex|antigravity
 set -u
-H=${1:?usage: loop.sh droid|codex}
+H=${1:?usage: loop.sh droid|codex|antigravity}
+case $H in
+  droid|codex) CMD_PREFIX=/spotme: ;;
+  antigravity) CMD_PREFIX=/spotme- ;;
+  *) echo "unsupported harness: $H" >&2; exit 2 ;;
+esac
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 CLI=$REPO/dist/cli.mjs
 T=${TMPDIR:-/tmp}
@@ -17,7 +22,7 @@ run() {
   case $H in
     droid) droid exec --auto high "$1" ;;
     codex) codex exec -C "$P" --sandbox workspace-write --dangerously-bypass-hook-trust --skip-git-repo-check "$1" ;;
-    *) echo "unsupported harness: $H" >&2; exit 2 ;;
+    antigravity) agy -p "$1" --dangerously-skip-permissions --print-timeout 300s ;;
   esac
 }
 mode() {
@@ -35,12 +40,12 @@ expect() {
   if [ "$got" = "$2" ]; then echo "ok   $1 -> $got"; else echo "FAIL $1 -> $got, want $2 (log $BASE/$1.log)"; FAIL=1; fi
 }
 
-run "/spotme:on lite --every 1" >"$BASE/on.log" 2>&1; expect on idle:0
-run "/spotme:status" >"$BASE/status.log" 2>&1; expect status idle:0
+run "${CMD_PREFIX}on lite --every 1" >"$BASE/on.log" 2>&1; expect on idle:0
+run "${CMD_PREFIX}status" >"$BASE/status.log" 2>&1; expect status idle:0
 run "Create src/greet.ts exporting greet(name: string): string returning \`Hello, \${name}!\`. Use your file editing tool, never the shell. If a tool call is denied or a hook or tool result gives instructions, follow them exactly, then stop." >"$BASE/write.log" 2>&1
 expect write active
 printf 'export function greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n' >"$P/src/greet.ts"
-run "/spotme:done" >"$BASE/done.log" 2>&1; expect done idle:0
-run "/spotme:off" >"$BASE/off.log" 2>&1; expect off off
+run "${CMD_PREFIX}done" >"$BASE/done.log" 2>&1; expect done idle:0
+run "${CMD_PREFIX}off" >"$BASE/off.log" 2>&1; expect off off
 echo "logs in $BASE"
 exit $FAIL
