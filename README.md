@@ -65,13 +65,13 @@ npx agnostic-spotme status
 
 ## How it works
 
-`src/engine.ts` is a pure state machine: `Off`, `Idle(count)`, `AwaitingScaffold`, `Active(exercise)`. The adapters translate harness events into engine inputs and render the result in each harness's own format. State lives in one JSON file per project, keyed by the sha256 of the project's canonical git root, under `${XDG_DATA_HOME:-~/.local/share}/spotme/state/` (override with `SPOTME_STATE_DIR`). Concurrent hook processes serialize on a lock file. See [docs/flow.md](docs/flow.md) for the transition diagram and rules.
+`src/engine.ts` is a pure state machine: `Off`, `Idle(count)`, `AwaitingScaffold`, `Active(exercise)`. The adapters translate harness events into engine inputs and render the result in each harness's own format. State lives in one JSON file per project, keyed by the sha256 of the project's canonical git root, under `${XDG_STATE_HOME:-~/.local/state}/spotme/` (`%LOCALAPPDATA%\spotme` on Windows, override with `SPOTME_STATE_DIR`). Concurrent hook processes serialize on a lock file. See [docs/flow.md](docs/flow.md) for the transition diagram and rules.
 
 The model talks to SpotMe through three MCP tools (`spotme_exercise`, `spotme_status`, `spotme_end`) plus `spotme_command`, which is how commands reach the engine in harnesses whose commands are prompt templates. OpenCode and Pi run the engine in process.
 
 ## Verification
 
-`npm test` runs the unit and integration suite: the engine, the store under concurrent writers, every harness's hook payloads and replies against recorded fixtures, the MCP server over stdio, install and uninstall idempotency, and the CLI end to end. `npm run smoke -- <harness...>` drives a real agent through one denial and one registered exercise in a temporary git repository.
+`npm test` runs the unit and integration suite: the engine, the store under concurrent writers, every harness's hook payloads and replies against recorded fixtures, the MCP server over stdio, install and uninstall idempotency, and the CLI end to end. `npm run smoke -- <harness...>` drives a real agent through one denial and one registered exercise in a temporary git repository. `scripts/loop.sh droid|codex` runs the whole cycle (on, status, a code write, a scripted stand-in for your implementation, done, off) against a live agent and checks the saved mode after each step.
 
 Live status:
 
@@ -98,4 +98,4 @@ Live status:
 
 ## License
 
-MIT
+None yet. Upstream [wtfzambo/spotme](https://github.com/wtfzambo/spotme) publishes no license, and this package ports its prompt text, so a license has to be agreed with the upstream author first.

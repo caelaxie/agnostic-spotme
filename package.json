@@ -2,7 +2,7 @@
   "name": "agnostic-spotme",
   "version": "0.1.0",
   "description": "SpotMe, gym mode for coding agents, for any harness: Droid, Claude Code, Codex CLI, Cursor, Gemini CLI, OpenCode and Pi.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "bin": {
     "spotme": "dist/cli.mjs"
