@@ -122,6 +122,9 @@ for (const id of ['claude', 'codex', 'cursor', 'gemini', 'antigravity'] as const
     if (id === 'antigravity') {
       const later = loadFixtures(id, box.root).get('prompt-later')!;
       assert.deepEqual(await runHook(id, 'prompt', JSON.stringify(later.stdin), box.env), h.hooks!.pass('prompt'));
+      const steps = (JSON.parse(status.stdout) as { injectSteps: unknown[] }).injectSteps;
+      const note = field(field(steps[1], 'systemMessage'), 'systemMessage');
+      assert.match(String(note), /already handled/, 'the model is told not to rerun a command the hook answered');
     }
     await runHook(id, 'prompt', asPrompt(`${h.vocab.command('on')} hard --every 4`), box.env);
     assert.match(

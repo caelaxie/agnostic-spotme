@@ -81,7 +81,7 @@ Live status:
 | Droid 1.4.1 | live smoke passes | `droid exec --auto high`: one denial, scaffold with marker, exercise registered over MCP |
 | Codex CLI 0.166.0 | live smoke passes | `codex exec`: one `apply_patch` denial, scaffold, exercise registered over MCP |
 | Cursor agent | live smoke passes | `cursor-agent -p`: one `Write` denial, scaffold, exercise registered over MCP |
-| Antigravity CLI 1.5.2 | live smoke and full loop pass | `agy -p`: one `write_file` denial, scaffold, exercise registered over MCP, then `done` and `off` checked through saved state |
+| Antigravity CLI 1.5.2 | live smoke and full loop pass | `agy -p`: one `write_file` denial, scaffold, exercise registered over MCP, then `done` and `off` checked through saved state. The interactive TUI was driven by hand for on, a write, status and off |
 | Pi 0.84.2 | live smoke passes | `pi -p -e src/pi.ts`: exercise registered through the in-process tool |
 | OpenCode 2.0.12 | loading verified, write denial not run live | plugin listed active, MCP server connected, all eight commands registered; no model provider was available for a full run |
 | Claude Code | untested | built from published hook and plugin docs; payloads in `test/fixtures/claude` are doc-shaped |

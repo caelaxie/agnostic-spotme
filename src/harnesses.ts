@@ -222,6 +222,8 @@ const gemini: Harness = {
 // Antigravity CLI. write_file, edit_file and all hook replies MEASURED on 1.5.1.
 // PreInvocation fires before every model call, so only the first invocation may run a command.
 // Empty stdout passes: {} denies, while an explicit allow auto-approves the tool call.
+const HANDLED_NOTE =
+  'SpotMe already handled the user\'s last /spotme command through a hook and showed them the reply. Do not run that command again or call spotme_command for it.';
 const antigravityProtocol: HookProtocol = {
   events: { write: 'PreToolUse', prompt: 'PreInvocation' },
   parse: (_event, stdin) => {
@@ -240,8 +242,14 @@ const antigravityProtocol: HookProtocol = {
   },
   deny: (r) => ({ stdout: JSON.stringify({ decision: 'deny', reason: r }), exitCode: 0 }),
   pass: () => ({ stdout: '', exitCode: 0 }),
+  // errorMessage is the only injected step the user sees. A terminated turn leaves the command
+  // unanswered in the transcript, and the model re-ran it on the next turn (MEASURED in the TUI)
+  // until a persistent systemMessage marked it handled.
   stop: (t) => ({
-    stdout: JSON.stringify({ injectSteps: [{ errorMessage: { userMessage: t } }], terminationBehavior: 'terminate' }),
+    stdout: JSON.stringify({
+      injectSteps: [{ errorMessage: { userMessage: t } }, { systemMessage: { systemMessage: HANDLED_NOTE } }],
+      terminationBehavior: 'terminate',
+    }),
     exitCode: 0,
   }),
 };
