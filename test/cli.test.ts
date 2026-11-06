@@ -82,6 +82,15 @@ test('install --dry-run writes nothing', async () => {
   assert.equal(existsSync(join(box.env.XDG_DATA_HOME!, 'spotme')), false);
 });
 
+test('doctor lists an installed Antigravity project', async () => {
+  const box = sandbox();
+  const install = await cli(box, 'install', 'antigravity', '--root', box.root, '--state-dir', box.stateDir);
+  assert.equal(install.code, 0, install.err);
+  const doctor = await cli(box, 'doctor', '--root', box.root, '--state-dir', box.stateDir);
+  assert.equal(doctor.code, 0, doctor.out + doctor.err);
+  assert.match(doctor.out, /^antigravity\s+.*PATH; project installed, user absent$/m);
+});
+
 test('the installed hook command runs from the stable runtime copy and denies at the trigger', async () => {
   const box = sandbox();
   const install = await run(process.execPath, [bundle(), 'install', 'droid', '--root', box.root, '--state-dir', box.stateDir], { env: box.env });

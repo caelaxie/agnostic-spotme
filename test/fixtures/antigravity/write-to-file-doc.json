@@ -1,0 +1,28 @@
+{
+  "source": "doc",
+  "event": "write",
+  "stdin": {
+    "artifactDirectoryPath": "/Users/x/.gemini/antigravity-cli/brain/agy-c-1",
+    "conversationId": "agy-c-1",
+    "lastUserInput": "Create src/greet.ts",
+    "modelName": "gemini-4-argon-high",
+    "stepIdx": 2,
+    "toolCall": {
+      "args": {
+        "TargetFile": "__ROOT__/src/greet.ts",
+        "Content": "export const greet = (name: string) => `Hello, ${name}!`;"
+      },
+      "name": "write_to_file"
+    },
+    "transcriptPath": "/Users/x/.gemini/antigravity-cli/brain/agy-c-1/transcript.json",
+    "workspacePaths": ["__ROOT__"]
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "create",
+        "path": "__ROOT__/src/greet.ts"
+      }
+    ]
+  }
+}

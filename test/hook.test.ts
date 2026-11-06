@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { isCommandName } from '../src/engine.ts';
-import { extractWrites, parsePatch, parsePromptCommand, writeMatcher } from '../src/harness.ts';
+import { extractWrites, field, parsePatch, parsePromptCommand, writeMatcher } from '../src/harness.ts';
 import type { HookEvent } from '../src/harness.ts';
 import { HARNESSES } from '../src/harnesses.ts';
 import type { HarnessId } from '../src/harnesses.ts';
@@ -19,7 +19,7 @@ interface Fixture {
   readonly expect: {
     readonly writes?: readonly { kind: string; path: string }[];
     readonly code?: boolean;
-    readonly command?: { name: string; args: string };
+    readonly command?: { name: string; args: string } | null;
   };
 }
 
@@ -31,6 +31,7 @@ const REQUIRED: Readonly<Partial<Record<HarnessId, readonly string[]>>> = {
   codex: ['patch-add', 'patch-update', 'patch-delete', 'patch-move', 'bash-ignored', 'prompt'],
   cursor: ['write', 'shell-ignored', 'prompt'],
   gemini: ['write-file', 'replace', 'prompt'],
+  antigravity: ['write-file', 'edit-file', 'run-command-ignored', 'prompt', 'prompt-later', 'write-to-file-doc'],
 };
 
 function substitute(value: unknown, root: string): unknown {
@@ -70,7 +71,7 @@ for (const id of hookHarnesses) {
       if (fx.expect.writes) {
         assert.deepEqual(extractWrites(h.writes, payload.toolName ?? '', payload.toolInput), fx.expect.writes, name);
       }
-      if (fx.expect.command) {
+      if (fx.expect.command !== undefined) {
         assert.deepEqual(parsePromptCommand(payload.prompt ?? '', isCommandName), fx.expect.command, name);
       }
     }
@@ -102,10 +103,12 @@ for (const id of hookHarnesses) {
 function extractReason(stdout: string): string {
   const o = JSON.parse(stdout) as Record<string, unknown>;
   const hso = o.hookSpecificOutput as Record<string, unknown> | undefined;
-  return String(hso?.permissionDecisionReason ?? o.reason ?? o.user_message ?? '');
+  const firstStep = Array.isArray(o.injectSteps) ? o.injectSteps[0] : undefined;
+  const userMessage = field(field(firstStep, 'errorMessage'), 'userMessage');
+  return String(hso?.permissionDecisionReason ?? o.reason ?? o.user_message ?? userMessage ?? '');
 }
 
-for (const id of ['claude', 'codex', 'cursor', 'gemini'] as const) {
+for (const id of ['claude', 'codex', 'cursor', 'gemini', 'antigravity'] as const) {
   test(`${id}: state commands stop the prompt locally, prompt commands reach the model`, async () => {
     const h = HARNESSES[id];
     const box = sandbox();
@@ -114,7 +117,12 @@ for (const id of ['claude', 'codex', 'cursor', 'gemini'] as const) {
     assert.deepEqual(status, h.hooks!.stop(extractReason(status.stdout)));
     assert.match(status.stdout, /SpotMe: .*off/);
 
-    const asPrompt = (text: string) => JSON.stringify({ ...(prompt.stdin as object), prompt: text });
+    const promptKey = id === 'antigravity' ? 'lastUserInput' : 'prompt';
+    const asPrompt = (text: string) => JSON.stringify({ ...(prompt.stdin as object), [promptKey]: text });
+    if (id === 'antigravity') {
+      const later = loadFixtures(id, box.root).get('prompt-later')!;
+      assert.deepEqual(await runHook(id, 'prompt', JSON.stringify(later.stdin), box.env), h.hooks!.pass('prompt'));
+    }
     await runHook(id, 'prompt', asPrompt(`${h.vocab.command('on')} hard --every 4`), box.env);
     assert.match(
       (await openSpotMe(box.root, h.vocab, { env: box.env }).callTool('spotme_status', {})).text,

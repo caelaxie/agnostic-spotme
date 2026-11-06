@@ -1,0 +1,17 @@
+{
+  "source": "measured",
+  "event": "prompt",
+  "stdin": {
+    "artifactDirectoryPath": "/Users/x/.gemini/antigravity-cli/brain/agy-c-1",
+    "conversationId": "agy-c-1",
+    "lastUserInput": "/spotme-on lite --every 2",
+    "modelName": "gemini-4-argon-high",
+    "invocationNum": 1,
+    "initialNumSteps": 1,
+    "transcriptPath": "/Users/x/.gemini/antigravity-cli/brain/agy-c-1/transcript.json",
+    "workspacePaths": ["__ROOT__"]
+  },
+  "expect": {
+    "command": null
+  }
+}

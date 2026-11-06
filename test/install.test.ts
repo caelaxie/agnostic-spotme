@@ -92,6 +92,30 @@ test('user hooks, settings and TOML survive an install and uninstall byte for by
   assert.equal(readFileSync(join(box.root, '.gemini', 'settings.json'), 'utf8'), userGemini);
 });
 
+test('Antigravity owns its named hook and leaves foreign named hooks untouched', async () => {
+  const box = sandbox();
+  const path = join(box.root, '.agents', 'hooks.json');
+  const foreign = { herdr: { PreToolUse: [{ hooks: [{ type: 'command', command: 'herdr-hook' }] }] } };
+  const before = `${JSON.stringify(foreign, null, 2)}\n`;
+  seed(path, before);
+
+  await apply(await plan(assetsOf(box, 'antigravity', 'project'), 'install'));
+  const installed = JSON.parse(readFileSync(path, 'utf8'));
+  assert.deepEqual(installed.herdr, foreign.herdr);
+  assert.equal(installed.spotme.PreToolUse[0].hooks[0].timeout, 10);
+  assert.equal(installed.spotme.PreInvocation[0].timeout, 10);
+  const command = readFileSync(join(box.root, '.agents', 'skills', 'spotme-on', 'SKILL.md'), 'utf8');
+  assert.match(command, /^---\nname: spotme-on\n/);
+  assert.match(command, /Use only when the user runs \/spotme-on\./);
+  const skill = readFileSync(join(box.root, '.agents', 'skills', 'spotme-antigravity', 'SKILL.md'), 'utf8');
+  assert.match(skill, /^---\nname: spotme-antigravity\n/);
+  const mcp = JSON.parse(readFileSync(join(box.root, '.agents', 'mcp_config.json'), 'utf8'));
+  assert.equal(mcp.mcpServers.spotme.type, undefined);
+
+  await apply(await plan(assetsOf(box, 'antigravity', 'project'), 'uninstall'));
+  assert.equal(readFileSync(path, 'utf8'), before);
+});
+
 test('a reinstall with a different launcher replaces the old hook instead of adding one', async () => {
   const box = sandbox();
   await apply(await plan(assetsOf(box, 'cursor', 'project', '/old/spotme'), 'install'));

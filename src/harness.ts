@@ -243,6 +243,19 @@ export function hooksJson(
   };
 }
 
+export function namedHookJson(path: string, name: string, entry: Json): Asset {
+  return {
+    kind: 'json',
+    path,
+    edit(doc, op) {
+      const next: JsonObject = structuredClone(doc);
+      if (op === 'install') next[name] = entry;
+      else delete next[name];
+      return next;
+    },
+  };
+}
+
 export function namedEntryJson(path: string, key: string, name: string, entry: Json): Asset {
   return {
     kind: 'json',
@@ -268,8 +281,8 @@ export function file(path: string, content: string | Json): Asset {
   return { kind: 'file', path, content: typeof content === 'string' ? content : `${JSON.stringify(content, null, 2)}\n` };
 }
 
-export function skillFile(path: string, vocab: Vocab): Asset {
-  return file(path, `---\nname: spotme\ndescription: ${SKILL_DESCRIPTION}\n---\n\n${skillMarkdown(vocab)}`);
+export function skillFile(path: string, vocab: Vocab, name = 'spotme'): Asset {
+  return file(path, `---\nname: ${name}\ndescription: ${SKILL_DESCRIPTION}\n---\n\n${skillMarkdown(vocab)}`);
 }
 
 export function note(text: string): Asset {

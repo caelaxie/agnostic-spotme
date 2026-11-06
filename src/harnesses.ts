@@ -12,6 +12,7 @@ import {
   mcpArgv,
   mcpServersJson,
   namedEntryJson,
+  namedHookJson,
   note,
   parseCommonPayload,
   pathField,
@@ -218,6 +219,70 @@ const gemini: Harness = {
   },
 };
 
+// Antigravity CLI. write_file, edit_file and all hook replies MEASURED on 1.5.1.
+// PreInvocation fires before every model call, so only the first invocation may run a command.
+// Empty stdout passes: {} denies, while an explicit allow auto-approves the tool call.
+const antigravityProtocol: HookProtocol = {
+  events: { write: 'PreToolUse', prompt: 'PreInvocation' },
+  parse: (_event, stdin) => {
+    const roots = field(stdin, 'workspacePaths');
+    const dir = Array.isArray(roots) && typeof roots[0] === 'string' && roots[0] ? roots[0] : undefined;
+    const toolCall = field(stdin, 'toolCall');
+    const toolName = field(toolCall, 'name');
+    const invocation = field(stdin, 'invocationNum');
+    const prompt = field(stdin, 'lastUserInput');
+    return {
+      dir,
+      toolName: typeof toolName === 'string' && toolName ? toolName : undefined,
+      toolInput: field(toolCall, 'args'),
+      prompt: (invocation === undefined || invocation === 0) && typeof prompt === 'string' && prompt ? prompt : undefined,
+    };
+  },
+  deny: (r) => ({ stdout: JSON.stringify({ decision: 'deny', reason: r }), exitCode: 0 }),
+  pass: () => ({ stdout: '', exitCode: 0 }),
+  stop: (t) => ({
+    stdout: JSON.stringify({ injectSteps: [{ errorMessage: { userMessage: t } }], terminationBehavior: 'terminate' }),
+    exitCode: 0,
+  }),
+};
+const antigravityWrites: WriteTable = {
+  write_file: pathField('Path', 'create'),
+  edit_file: pathField('Path', 'edit'),
+  // DOC only. Antigravity 1.5.1 emitted the measured names above instead.
+  write_to_file: pathField('TargetFile', 'create'),
+  replace_file_content: pathField('TargetFile', 'edit'),
+  multi_replace_file_content: pathField('TargetFile', 'edit'),
+};
+const antigravity: Harness = {
+  vocab: { command: (n) => `/spotme-${n}`, writeTool: 'write_file', editTool: 'edit_file' },
+  writes: antigravityWrites,
+  hooks: antigravityProtocol,
+  scopes: ['project', 'user'],
+  binary: 'agy',
+  assets: (ctx) => {
+    const dir = ctx.scope === 'project' ? join(ctx.project, '.agents') : join(ctx.home, '.gemini', 'config');
+    return [
+      namedHookJson(join(dir, 'hooks.json'), 'spotme', {
+        PreToolUse: [
+          {
+            matcher: writeMatcher(antigravityWrites),
+            hooks: [{ type: 'command', command: hookCommand(ctx, 'write'), timeout: 10 }],
+          },
+        ],
+        PreInvocation: [{ type: 'command', command: hookCommand(ctx, 'prompt'), timeout: 10 }],
+      }),
+      ...COMMAND_NAMES.map((n) =>
+        file(
+          join(dir, 'skills', `spotme-${n}`, 'SKILL.md'),
+          `---\nname: spotme-${n}\ndescription: ${JSON.stringify(`${COMMAND_SPECS[n].summary}. Use only when the user runs /spotme-${n}.`)}\n---\n\n${commandFileBody(n, null)}`,
+        ),
+      ),
+      skillFile(join(dir, 'skills', 'spotme-antigravity', 'SKILL.md'), antigravity.vocab, 'spotme-antigravity'),
+      mcpServersJson(join(dir, 'mcp_config.json'), ctx),
+    ];
+  },
+};
+
 // OpenCode 2.x. Tool names and arg keys read from the installed 2.0.12 binary: write {path, content},
 // edit {path, oldString, newString}, patch {patchText}. 2.0.12 rejects a plugin configured as an
 // absolute file path but loads any .js file in a plugins/ config directory, so install writes a
@@ -256,7 +321,7 @@ const pi: Harness = {
   assets: () => [note('Pi loads SpotMe as a package: run `pi install npm:agnostic-spotme` (or `pi install <path to this package>`).')],
 };
 
-export const HARNESSES = { droid, claude, codex, cursor, gemini, opencode, pi } as const satisfies Record<string, Harness>;
+export const HARNESSES = { droid, claude, codex, cursor, gemini, antigravity, opencode, pi } as const satisfies Record<string, Harness>;
 export type HarnessId = keyof typeof HARNESSES;
 export const HARNESS_IDS = Object.keys(HARNESSES) as HarnessId[];
 
