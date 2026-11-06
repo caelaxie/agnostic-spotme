@@ -33,8 +33,8 @@ stateDiagram-v2
 
 ## Where each input comes from
 
-| Input | Hook harnesses (Droid, Claude Code, Codex, Cursor, Gemini) | OpenCode | Pi |
-|-------|-------------------------------------------------------------|----------|----|
+| Input | Hook harnesses (Droid, Claude Code, Codex, Cursor, Gemini, Antigravity) | OpenCode | Pi |
+|-------|-------------------------------------------------------------------------|----------|----|
 | code write | `spotme hook <harness> write` on the pre-tool hook | `tool.hook("execute.before")` in the plugin | `pi.on("tool_call")` |
 | on, off, status | prompt hook runs the command and stops the turn where the harness has one; otherwise the command file asks the model to call `spotme_command` and relay the text | command file, then `spotme_command` over MCP | `registerCommand`, answered in the UI |
 | done, solve, skip, hint, rep | command file or raw prompt reaches the model, which calls `spotme_command` and follows the returned instructions | same | `registerCommand`, then `sendUserMessage` with the instructions |

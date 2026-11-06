@@ -1,7 +1,7 @@
 {
   "name": "agnostic-spotme",
   "version": "0.1.0",
-  "description": "SpotMe, gym mode for coding agents, for any harness: Droid, Claude Code, Codex CLI, Cursor, Gemini CLI, OpenCode and Pi.",
+  "description": "SpotMe, gym mode for coding agents, for any harness: Droid, Claude Code, Codex CLI, Cursor, Gemini CLI, Antigravity CLI, OpenCode and Pi.",
   "license": "UNLICENSED",
   "type": "module",
   "bin": {
@@ -29,6 +29,7 @@
   "keywords": [
     "pi-package",
     "opencode-plugin",
+    "antigravity",
     "spotme",
     "gym-mode",
     "coding-agent",
