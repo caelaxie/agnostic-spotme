@@ -1,0 +1,22 @@
+{
+  "source": "measured-shape",
+  "event": "write",
+  "stdin": {
+    "conversation_id": "c-1",
+    "session_id": "c-1",
+    "generation_id": "g-1",
+    "model": "auto",
+    "tool_name": "Shell",
+    "tool_input": {
+      "command": "ls"
+    },
+    "workspace_roots": [
+      "__ROOT__"
+    ],
+    "hook_event_name": "preToolUse",
+    "cursor_version": "2026.10.22"
+  },
+  "expect": {
+    "writes": []
+  }
+}

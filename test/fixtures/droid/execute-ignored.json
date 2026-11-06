@@ -1,0 +1,18 @@
+{
+  "source": "measured-shape",
+  "event": "write",
+  "stdin": {
+    "session_id": "s-1",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "__ROOT__",
+    "permission_mode": "auto-medium",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Execute",
+    "tool_input": {
+      "command": "echo hi > x.ts"
+    }
+  },
+  "expect": {
+    "writes": []
+  }
+}

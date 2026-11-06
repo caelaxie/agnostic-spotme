@@ -1,0 +1,23 @@
+{
+  "source": "doc",
+  "event": "write",
+  "stdin": {
+    "session_id": "s-1",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "__ROOT__",
+    "permission_mode": "auto-medium",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "ApplyPatch",
+    "tool_input": {
+      "input": "*** Begin Patch\n*** Add File: __ROOT__/src/b.ts\n+export {};\n*** End Patch"
+    }
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "create",
+        "path": "__ROOT__/src/b.ts"
+      }
+    ]
+  }
+}

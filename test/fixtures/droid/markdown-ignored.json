@@ -1,0 +1,25 @@
+{
+  "source": "measured-shape",
+  "event": "write",
+  "stdin": {
+    "session_id": "s-1",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "__ROOT__",
+    "permission_mode": "auto-medium",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Create",
+    "tool_input": {
+      "file_path": "__ROOT__/NOTES.md",
+      "content": "# notes\n"
+    }
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "create",
+        "path": "__ROOT__/NOTES.md"
+      }
+    ],
+    "code": false
+  }
+}

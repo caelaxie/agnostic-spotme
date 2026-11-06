@@ -1,0 +1,28 @@
+{
+  "source": "measured-shape",
+  "event": "write",
+  "stdin": {
+    "conversation_id": "c-1",
+    "session_id": "c-1",
+    "generation_id": "g-1",
+    "model": "auto",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "__ROOT__/src/a.ts",
+      "content": "x"
+    },
+    "workspace_roots": [
+      "__ROOT__"
+    ],
+    "hook_event_name": "preToolUse",
+    "cursor_version": "2026.10.22"
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "create",
+        "path": "__ROOT__/src/a.ts"
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "source": "doc",
+  "event": "write",
+  "stdin": {
+    "session_id": "s-1",
+    "transcript_path": "/tmp/t.jsonl",
+    "cwd": "__ROOT__",
+    "permission_mode": "default",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "__ROOT__/src/a.ts",
+      "old_string": "a",
+      "new_string": "b",
+      "replace_all": false
+    }
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "edit",
+        "path": "__ROOT__/src/a.ts"
+      }
+    ]
+  }
+}

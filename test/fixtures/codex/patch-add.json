@@ -1,0 +1,25 @@
+{
+  "source": "measured-shape",
+  "event": "write",
+  "stdin": {
+    "session_id": "s-1",
+    "transcript_path": null,
+    "cwd": "__ROOT__",
+    "hook_event_name": "PreToolUse",
+    "model": "gpt-5",
+    "permission_mode": "workspace-write",
+    "tool_name": "apply_patch",
+    "tool_input": {
+      "command": "*** Begin Patch\n*** Add File: __ROOT__/b.ts\n+export const b = 1;\n*** End Patch\n"
+    },
+    "tool_use_id": "call_1"
+  },
+  "expect": {
+    "writes": [
+      {
+        "kind": "create",
+        "path": "__ROOT__/b.ts"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "source": "doc",
+  "event": "prompt",
+  "stdin": {
+    "session_id": "s-1",
+    "cwd": "__ROOT__",
+    "hook_event_name": "BeforeAgent",
+    "timestamp": "2026-01-01T00:00:00Z",
+    "prompt": "/spotme:status"
+  },
+  "expect": {
+    "command": {
+      "name": "status",
+      "args": ""
+    }
+  }
+}
